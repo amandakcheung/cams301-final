@@ -8,7 +8,7 @@ import Constants from 'expo-constants';
  * @param setPScreen: sets the screen to the display pscreen when there is a path chosen
  * @param convertDate: the convertDate method that changes the date from an ISO string to a human readable string
  */
-export default function SummaryPScreen({myPaths, setChosenPath, setPScreen, convertDate}) {
+export default function DetailsPScreen({myPaths, setChosenPath, setPScreen, convertDate}) {
   /**
    * This function sets the state variable chosenPath which will be displayed and 
    * also changes the PScreen to DisplayPScreen.js
