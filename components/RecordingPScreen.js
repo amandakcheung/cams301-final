@@ -24,7 +24,7 @@ const { width } = Dimensions.get("window");
 
 let subscription = null; // location tracking service
 
-export default function RecordingPScreen({ allPins, setAllPins, setPScreen }) {
+export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setChosenPin}) {
     // state variables used for recording
     // checks permission to access location
     const [permissionText, setPermissionText] = useState('Location permission not requested yet');
@@ -55,7 +55,8 @@ export default function RecordingPScreen({ allPins, setAllPins, setPScreen }) {
    * also changes the PScreen to DisplayPScreen.js
    * @param path: contains the json information for the date needing to be displayed
    */
-    function chosePath(path) {
+    function choosePin(pin) {
+        setChosenPin(pin);
         setPScreen((prevState) => {
             return 'details_pscreen'
         });
@@ -65,7 +66,7 @@ export default function RecordingPScreen({ allPins, setAllPins, setPScreen }) {
     const ListItem = props => {
         return (
             <TouchableOpacity
-                onPress={() => chosePath(props.text)}
+                onPress={() => choosePin(props.text)}
             >
                 <View style={styles.listItem}>
                     <Text style={styles.listItemText}>Type: {props.text.type} {"\n"}

@@ -67,13 +67,13 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       {/* creates if statements for deteriming which psuedoscreen is displayed */}
       {pscreen === "details_pscreen" &&
-        <DetailsPScreen pins={pins} setChosenPin={setChosenPin} convertDate={convertDate} />
+        <DetailsPScreen chosenPin={chosenPin}/>
       }
       {pscreen === "display_pscreen" &&
-        <DisplayPScreen chosenPin={chosenPin}/>
+        <DisplayPScreen allPins={pins}/>
       }
       {pscreen === "recording_pscreen" &&
-        <RecordingPScreen allPins = {pins} setAllPins={setPins} setPScreen={setPscreen}/>
+        <RecordingPScreen allPins = {pins} setAllPins={setPins} setPScreen={setPscreen} setChosenPin={setChosenPin}/>
       }
       {/* segemented buttons for the bottom of the screen to display each psuedoscreen option */}
       <SegmentedButtons
