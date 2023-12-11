@@ -1,4 +1,4 @@
-import { Text, SafeAreaView, StyleSheet } from 'react-native';
+import { Text, SafeAreaView, StyleSheet, View} from 'react-native';
 import PathView from "./PathView";
 import { useState } from 'react';
 import { Button } from "react-native-paper";
@@ -26,25 +26,26 @@ export default function DetailsPScreen({ chosenPin }) {
                 <Text>No path selected yet</Text> :
                 // creates a MapView object through PathView which sets up the map display
                 <PathView
-                    myCoord={{
-                        'latitude': 42.294613,
-                        'longitude': -71.3075
-                    }}
+                    myCoord={chosenPin.coords}
                     pins={pinArray} />
             }
-
-
+            <View style={styles.description}>
+                <Text style={styles.descWords}>
+                    Type of Surveillance: {chosenPin.type}
+                </Text>
+            </View>
         </SafeAreaView>
     );
 }
 // style information for the page
 const styles = StyleSheet.create({
-    screen: {
-      flex: 1,
-      paddingTop: Constants.statusBarHeight,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#fff",
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        width: '100%',
+        height: '100%',
     },
     listWrapper: {
       height: '75%', 
@@ -71,6 +72,16 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 25,
-        paddingTop: 30
+        paddingTop: 30,
+        fontWeight: 'bold'
+    },
+    description: {
+        flex: 1,
+        width: '100%',
+        height: '100%',
+        paddingTop: 10,
+    },
+    descWords:{
+        fontSize: 20,
     }
   });

@@ -11,7 +11,7 @@
  */
 
 import { useState } from 'react';
-import { Text, View, SafeAreaView, StyleSheet, Dimensions, FlatList, TouchableOpacity, TextInput, Modal} from 'react-native';
+import { Text, View, SafeAreaView, StyleSheet, Dimensions, FlatList, TouchableOpacity, TextInput, Modal } from 'react-native';
 import * as Location from 'expo-location';
 import * as PathStore from '../PathStore.js';
 import { Button } from "react-native-paper";
@@ -24,7 +24,7 @@ const { width } = Dimensions.get("window");
 
 let subscription = null; // location tracking service
 
-export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setChosenPin}) {
+export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setChosenPin }) {
     // state variables used for recording
     // checks permission to access location
     const [permissionText, setPermissionText] = useState('Location permission not requested yet');
@@ -42,7 +42,7 @@ export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setC
     const [selectedOption, setSelectedOption] = useState('Select an option');
     const options = [
         'security camera',
-        'card readers',
+        'card reader',
         'police station',
         'blue buttons'
     ];
@@ -77,12 +77,13 @@ export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setC
     }
 
     /**
- * This function starts foreground location tracking and makes sure that the 
- * path is being tracked as the user moves.
- *
- * */
+    //  * This function starts foreground location tracking and makes sure that the 
+    //  * path is being tracked as the user moves.
+    //  *
+    //  * */
     async function startTracking() {
-        setIsRecording(false);
+        setVisible(true)
+        console.log('started tracking')
         let perm = await Location.requestForegroundPermissionsAsync();
         setPermissionText(perm);
         if (perm.status !== 'granted') {
@@ -94,13 +95,6 @@ export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setC
             console.log('Stopping active location subscription service.')
             subscription.remove();
         }
-
-        // Reset myCoord and coords state variables for new tracking session 
-        resetRecording();
-        // record the state time of a path
-        setStartTime(prevTime => {
-            return getCurrTime();
-        })
         console.log('Starting location subscription service.')
         // changes and watches the updating position
         subscription = await Location.watchPositionAsync(
@@ -126,6 +120,7 @@ export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setC
      * @returns the new path that is saved
      */
     function createPin() {
+
         let newPin = {
             "type": type,
             "desc": desc,
@@ -134,6 +129,8 @@ export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setC
         return newPin
     }
     function savePin() {
+        startTracking();
+        console.log(JSON.stringify(myCoord))
         setVisible(false);
         setAllPins((prevPins => {
             return [...prevPins, createPin()]
@@ -143,11 +140,12 @@ export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setC
     return (
         <SafeAreaView style={styles.container}>
             {/* checks if the location services has been approved and started */}
-                <PathView
-                    myCoord={{
-                        'latitude': 42.294613,
-                        'longitude':-71.3075}}
-                    pins={allPins} />
+            <PathView
+                myCoord={{
+                    'latitude': 42.294613,
+                    'longitude': -71.3075
+                }}
+                pins={allPins} />
             <View style={styles.listWrapper}>
                 {/* creates a flatlist consisting of every item that needs to go into the flatlist */}
                 <FlatList style={styles.list}
@@ -163,7 +161,7 @@ export default function RecordingPScreen({ allPins, setAllPins, setPScreen, setC
                     buttonColor={'#c1d7ae'}
                     textColor={'#065535'}
                     labelStyle={styles.text}
-                    onPress={() => setVisible(true)}>
+                    onPress={() =>  startTracking()}>
                     Create New Pin
                 </Button>
             </View>
@@ -283,7 +281,7 @@ const styles = StyleSheet.create({
         marginVertical: 8,
         marginHorizontal: 16,
         backgroundColor: '#f9c2ff',
-      },
+    },
     list: {
         borderWidth: 1,
         borderColor: 'blue'
