@@ -2,8 +2,8 @@
  * Author: Amanda Cheung with help from:
  * Lyn from https://chafikgharbi.com/expo-location-tracking/
  * Lyn from https://snack.expo.dev/@fturbak/reactnativepaperbuttons 
- * Modified date: 11/30/23
- * Class: CS317
+ * Modified date: 12/10/23
+ * Class: CAMS 301
  */
 
 // imports all necessary tools for the project

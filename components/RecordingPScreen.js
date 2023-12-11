@@ -4,10 +4,6 @@
  * @author // Amanda Cheung with help from 
  * Lyn's snack https://snack.expo.dev/@fturbak/modal-textinput-popup-dialog
  * Lyn's snack https://snack.expo.dev/@fturbak/tracklocationmapbuttons 
- * @param allNames: the names of all paths-  used to check if there are duplicates
- * @param convertDate: the function to convert a date to be readable
- * @param setNewPaths: sets the new path array with all paths that are not in local storage yet
- * @param setAllNames: sets the names of the new paths that are not yet in local storage
  */
 
 import { useState } from 'react';

@@ -7,15 +7,6 @@ import MapView, { Marker, Polyline } from "react-native-maps";
 /**
  * This function creates an object PathView which is a MapView of the path that is being displayed
  * or recorded
- * @param convertDate: a function that converts a date from an ISO date to a human readable date object
- * @param myCoord: the current coordinate of the user
- * @param startCoord: the start coordinate of the path
- * @param startTime: the start time for the path
- * @param endCoord: the end coordinate of the path
- * @param stopTime: the end time of the path
- * @param spots: an array of all the spots in the path
- * @param coords: an list of all the coordinates in the path
- * @returns MapView of the path with all the parameters entered
  */
 export default function PathView({ myCoord, pins }) {
     console.log('mycoord' + myCoord)
