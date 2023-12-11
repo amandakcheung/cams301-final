@@ -11,160 +11,75 @@
  */
 
 import { useState } from 'react';
-import { Text, View, SafeAreaView, StyleSheet, Modal, TextInput, Dimensions } from 'react-native';
+import { Text, View, SafeAreaView, StyleSheet, Dimensions, FlatList, TouchableOpacity, TextInput, Modal} from 'react-native';
 import * as Location from 'expo-location';
 import * as PathStore from '../PathStore.js';
 import { Button } from "react-native-paper";
-import { pathDistanceInMeters } from '../distance.js'
 import PathView from "./PathView";
+import NewPin from "./NewPin";
+import ModalDropdown from 'react-native-modal-dropdown';
+import DisplayPScreen from './DisplayPScreen.js';
 
 const { width } = Dimensions.get("window");
 
 let subscription = null; // location tracking service
 
-export default function RecordingPScreen({ allNames, convertDate, setNewPaths, setAllNames }) {
+export default function RecordingPScreen({ allPins, setAllPins, setPScreen }) {
     // state variables used for recording
     // checks permission to access location
-    const [permissionText, setPermissionText]
-        = useState('Location permission not requested yet');
+    const [permissionText, setPermissionText] = useState('Location permission not requested yet');
     // sets the current location of the user and continues to update with the tracker
     const [myCoord, setMyCoord] = useState(null);
     // all coordinates crossed in the path
     const [coords, setCoords] = useState([]);
-    // an array that contains all the stops that are marked in the path
-    const [stops, setStops] = useState([]);
     // the title of the path
-    const [title, setTitle] = useState('');
-    // the start time of the path
-    const [startTime, setStartTime] = useState(null);
-    // the end time of the path
-    const [endTime, setEndTime] = useState(null);
+    const [type, setType] = useState('');
     // toggles whether or not the modal for stop title is displayed
-    const [isModalVisible, setModalVisible] = useState(false);
-    // Manages text within the dialog popup
-    const [stopTitleInputValue, setStopTitleInputValue] = useState('');
-    // contains the text that is being entered on the modal textbox
-    const [descInputValue, setDescInputValue] = useState('')
-    // toggles to show the save or delete modal
-    const [chooseAction, setChooseAction] = useState(false);
-    // toggles to show entering a title for the recording
-    const [canEnterTitle, setCanEnterTitle] = useState(false);
-    // toggles whether the start recording, add stop, and stop recording buttons are enabled
-    const [isRecording, setIsRecording] = useState(true);
-    // a boolean that determines whether or not there are duplicates in the entered title
-    const [needNewTitle, setNeedNewTitle] = useState(false);
+    const [visible, setVisible] = useState(false);
+    // description
+    const [desc, setDesc] = useState('')
 
+    const [selectedOption, setSelectedOption] = useState('Select an option');
+    const options = [
+        'security camera',
+        'card readers',
+        'police station',
+        'blue buttons'
+    ];
+    const handleOptionSelect = (index, value) => {
+        setSelectedOption(value);
+        setType(value);
+    };
     /**
-     * this function tracks the input put into the modal text box when a stop title is being added
-     */
-    function enterDialog() {
-        setStopTitleInputValue('');
-        setDescInputValue('');
-        setModalVisible(true);
+   * This function sets the state variable chosenPath which will be displayed and 
+   * also changes the PScreen to DisplayPScreen.js
+   * @param path: contains the json information for the date needing to be displayed
+   */
+    function chosePath(path) {
+        setPScreen((prevState) => {
+            return 'details_pscreen'
+        });
+    }
+
+    // creates a ListItem that contains the information in a summary for each path
+    const ListItem = props => {
+        return (
+            <TouchableOpacity
+                onPress={() => chosePath(props.text)}
+            >
+                <View style={styles.listItem}>
+                    <Text style={styles.listItemText}>Type: {props.text.type} {"\n"}
+                        Description: {props.text.desc} {"\n"}</Text>
+                </View>
+            </TouchableOpacity>
+        );
     }
 
     /**
-     * This function gets the current time at the moment clicked and changes it into a date object
-     */
-    function getCurrTime() {
-        d1 = new Date(Date.now())
-        return d1
-    }
-
-    /**
-     * This function takes in all the inputs that have been put in 
-     * and creates it into a path object (JSON)
-     * @returns the new path that is saved
-     */
-    function createPathObj() {
-        let newPath = {
-            "name": title,
-            "startTime": startTime,
-            "stopTime": endTime,
-            "pathDistance": calculateDistance(),
-            "spots": stops,
-            "coords": coords
-        }
-        return newPath
-    }
-
-    /**
-     * This function gets the title of the recording from the text modal input
-     */
-    function getTitle() {
-        setTitle('');
-        setChooseAction(false);
-        setCanEnterTitle(true);
-    }
-
-    /**
-     * This function handles all actions that are executed when a path has to be saved
-     */
-    function savePath() {
-        console.log('save')
-        // hides the modal to enter a title
-        setCanEnterTitle(false);
-        // checks for duplicates in name
-        if (allNames.includes(title)) {
-            setCanEnterTitle(true);
-            setNeedNewTitle(true);
-        }
-        else{
-            setNeedNewTitle(false);
-        }
-        // creates and stores the new path object
-        pathObj = createPathObj();
-        PathStore.storePath(pathObj);
-        console.log('successfully saved ' + JSON.stringify(pathObj))
-        // adds the path to a list of all the paths that are not yet in persistent storage
-        // and puts its name into the name list to check for duplicates
-        setNewPaths((prevPaths) => {
-            return [...prevPaths, pathObj]
-        })
-        setAllNames((prevNames)=>{
-            return [...prevNames, pathObj.name]
-        })
-    }
-
-    /**
-     * This path allows the path that was created to be deleted instead of saved
-     */
-    function deletePath() {
-        setChooseAction(false);
-        resetRecording();
-        console.log('successfully deleted')
-    }
-
-    /**
-     * This function calculates the distance of the path and then divides it
-     * by 1000 to change it from meters to km.
-     * 
-     */
-    function calculateDistance() {
-        console.log(coords)
-        return (pathDistanceInMeters(coords)) / 1000;
-    }
-
-    /**
-     * This resets the variables that track each recording so its fresh for the next recording
-     */
-    function resetRecording() {
-        // hides the map
-        setMyCoord(null)
-        // resets the stops for the next recording
-        setStops(prevStops => {
-            return []
-        })
-        // reset coords for next recording
-        setCoords(prevCoords => {
-            return []
-        })
-    }
-    /**
-     * This function starts foreground location tracking and makes sure that the 
-     * path is being tracked as the user moves.
-     *
-     * */
+ * This function starts foreground location tracking and makes sure that the 
+ * path is being tracked as the user moves.
+ *
+ * */
     async function startTracking() {
         setIsRecording(false);
         let perm = await Location.requestForegroundPermissionsAsync();
@@ -173,7 +88,6 @@ export default function RecordingPScreen({ allNames, convertDate, setNewPaths, s
             console.log('Permission to access location was denied');
             return;
         }
-
         // Shut down a foreground service subscription that's already running
         if (subscription !== null) {
             console.log('Stopping active location subscription service.')
@@ -188,10 +102,10 @@ export default function RecordingPScreen({ allNames, convertDate, setNewPaths, s
         })
         console.log('Starting location subscription service.')
         // changes and watches the updating position
-        subscription = await Location.watchPositionAsync(               
+        subscription = await Location.watchPositionAsync(
             {
                 accuracy: Location.Accuracy.BestForNavigation,
-                distanceInterval: 20
+                distanceInterval: 1
             },
             newLocation => {
                 const newCoord = {
@@ -202,184 +116,86 @@ export default function RecordingPScreen({ allNames, convertDate, setNewPaths, s
                 setMyCoord(prevMyCoord => {
                     return newCoord;
                 });
-                setCoords(prevCoords => {
-                    return [...prevCoords, newCoord];
-                });
             }
         );
     }
-
     /**
-     * This function handles adding a stop on the path while recording
+     * This function takes in all the inputs that have been put in 
+     * and creates it into a path object (JSON)
+     * @returns the new path that is saved
      */
-    function addStop() {
-        // makes the modal for entering a title & description for the stop available
-        setModalVisible(false);
-        // sets the title and information about the stop into variables
-        let stopTitle = stopTitleInputValue;
-        let stopMoreInfo = descInputValue;
-        let stopCoord = myCoord
-        let stopTime = getCurrTime()
-        // creates the json object for the stop
-        let newStop = {
-            title: stopTitle,
-            moreInfo: stopMoreInfo,
-            time: stopTime,
-            coord: stopCoord
+    function createPin() {
+        let newPin = {
+            "type": type,
+            "desc": desc,
+            "coords": myCoord
         }
-        // adds the stop into an array with the other stops that will be used when
-        // creates the pathObj
-        setStops(prevStops => {
-            return [...prevStops, newStop]
-        })
-        console.log('added new stop', stopCoord)
+        return newPin
     }
-    /**
-     * This function stops foreground location tracking and makes sure that
-     * the path being tracked has all the additional data saved.
-     * */ 
-    function stopTracking() {
-        console.log('stopping')
-        if (subscription !== null) {
-            console.log('Stopping active location subscription service.')
-            subscription.remove();
-        }
-        // setting the end time, stopping the recording, and allowing users to choose whether
-        // to choose to save or delete the recording
-        setEndTime(prevTime => {
-            return getCurrTime()
-        })
-        setIsRecording(true);
-        setChooseAction(prevAction => {
-            return true
-        })
-    };
-
+    function savePin() {
+        setVisible(false);
+        setAllPins((prevPins => {
+            return [...prevPins, createPin()]
+        }))
+        setPScreen('recording_pscreen');
+    }
     return (
         <SafeAreaView style={styles.container}>
             {/* checks if the location services has been approved and started */}
-            {(myCoord === null) ?
-                <Text>Waiting for location to display map ...</Text> :
-                // creates the MapView for the recording of the path
                 <PathView
-                    convertDate={convertDate}
-                    myCoord={myCoord}
-                    startCoord={coords[0]}
-                    startTime={startTime}
-                    endCoord={isRecording && coords[coords.length - 1]}
-                    stopTime={endTime}
-                    spots={stops}
-                    coords={coords} />
-            }
-            {/* the buttons to start, stop and add stop */}
+                    myCoord={{
+                        'latitude': 42.294613,
+                        'longitude':-71.3075}}
+                    pins={allPins} />
+            <View style={styles.listWrapper}>
+                {/* creates a flatlist consisting of every item that needs to go into the flatlist */}
+                <FlatList style={styles.list}
+                    data={allPins}
+                    renderItem={datum => <ListItem key={datum.item.desc} text={datum.item}></ListItem>}
+                    keyExtractor={item => item.desc}
+                />
+            </View>
             <View style={styles.controls}>
                 <Button
                     mode="outlined"
-                    disabled={!isRecording}
                     style={color = 'green'}
                     buttonColor={'#c1d7ae'}
                     textColor={'#065535'}
                     labelStyle={styles.text}
-                    onPress={() => startTracking()}>
-                    Start Tracking
+                    onPress={() => setVisible(true)}>
+                    Create New Pin
                 </Button>
-                <Button
-                    mode="outlined"
-                    disabled={isRecording}
-                    style={color = 'yellow'}
-                    buttonColor={'#fff8b6'}
-                    textColor={'#ffc61a'}
-                    labelStyle={styles.text}
-                    onPress={() => enterDialog()}>
-                    Add Stop
-                </Button>
-                <Button
-                    mode="outlined"
-                    disabled={isRecording}
-                    buttonColor={'#c53d46'}
-                    textColor={'#800020'}
-                    labelStyle={styles.text}
-                    onPress={() => stopTracking()}>
-                    Stop Tracking
-                </Button>
-                {/* creates the modals to enter a title for a stop or the whole
-                recording and whether or not the recording should be saved or delete */}
-                <Modal animationType="slide"
-                    transparent visible={isModalVisible}
-                    presentationStyle="overFullScreen"
-                >
-                    <View style={styles.modalViewWrapper}>
-                        <View style={styles.modalView}>
-                            <TextInput placeholder="Enter a title..."
-                                style={styles.input}
-                                value={stopTitleInputValue}
-                                onChangeText={(value) => setStopTitleInputValue(value)} />
-                            <TextInput placeholder="(optional) Enter a description..."
-                                style={styles.input}
-                                multiline
-                                numberOfLines={4}
-                                value={descInputValue}
-                                onChangeText={(value) => setDescInputValue(value)} />
-                            {/** This button is responsible to close the modal */}
-                            <Button
-                                mode="contained"
-                                labelStyle={styles.buttonText}
-                                onPress={addStop}
-                            >
-                                Done
-                            </Button>
-                        </View>
-                    </View>
-                </Modal>
-                <Modal animationType="slide"
-                    transparent visible={chooseAction}
-                    presentationStyle="overFullScreen"
-                >
-                    <View style={styles.modalViewWrapper}>
-                        <View style={styles.modalView}>
-                            {/** This button is responsible to close the modal + saving path */}
-                            <Button
-                                style={styles.button}
-                                mode="contained"
-                                labelStyle={styles.buttonText}
-                                onPress={getTitle}
-                            >
-                                Save Path Recording
-                            </Button>
-                            {/** this button is responsible for deleting the path + closing modal*/}
-                            <Button
-                                mode="contained"
-                                labelStyle={styles.buttonText}
-                                onPress={deletePath}>
-                                Delete Path Recording
-                            </Button>
-                        </View>
-                    </View>
-                </Modal>
-                <Modal animationType="slide"
-                    transparent visible={canEnterTitle}
-                    presentationStyle="overFullScreen"
-                >
-                    <View style={styles.modalViewWrapper}>
-                        <View style={styles.modalView}>
-                            {needNewTitle && <Text> A path with this name already exists. Please enter a new name.</Text>}
-                            <TextInput placeholder="Enter a title..."
-                                style={styles.input}
-                                value={title}
-                                onChangeText={(value) => setTitle(value)} />
-                            {/** This button is responsible to close the modal */}
-                            <Button
-                                mode="contained"
-                                labelStyle={styles.buttonText}
-                                onPress={savePath}>
-                                Done
-                            </Button>
-                        </View>
-                    </View>
-                </Modal>
             </View>
+            <Modal animationType="slide"
+                transparent visible={visible}
+                presentationStyle="overFullScreen">
+                <View style={styles.modalViewWrapper}>
+                    <View style={styles.modalView}>
+                        <ModalDropdown style={styles.input}
+                            options={options}
+                            defaultValue={selectedOption}
+                            onSelect={handleOptionSelect}
+                        />
+                        {/* <Text>Selected option: {selectedOption}</Text> */}
+                        <TextInput placeholder="Enter a description (optional)..."
+                            style={styles.input}
+                            value={desc}
+                            onChangeText={(value) => setDesc(value)} />
+                        {/** This button is responsible to close the modal + saving path */}
+                        <Button
+                            style={styles.button}
+                            mode="contained"
+                            labelStyle={styles.buttonText}
+                            onPress={savePin}
+                        >
+                            Save Pin
+                        </Button>
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
-    );
+
+    )
 }
 
 // style information for the page
@@ -455,5 +271,20 @@ const styles = StyleSheet.create({
         margin: 12,
         borderWidth: 1,
         padding: 10,
-    }
+    },
+    listWrapper: {
+        height: '45%',
+        width: '95%',
+    },
+    listItem: {
+        flexDirection: "row",
+        padding: 10,
+        marginVertical: 8,
+        marginHorizontal: 16,
+        backgroundColor: '#f9c2ff',
+      },
+    list: {
+        borderWidth: 1,
+        borderColor: 'blue'
+    },
 });
